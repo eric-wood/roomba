@@ -1,5 +1,5 @@
 # rumba
-### A Ruby wrapper for the Roomba Serial Command Interface
+A Ruby wrapper for the Roomba Serial Command Interface
 
 - - -
 
@@ -21,7 +21,7 @@ This will get filled out as the library is written :)
 The complete Roomba SCI specification can be found [here](http://www.irobot.com/images/consumer/hacker/roomba_sci_spec_manual.pdf)
 
 ### License
-"THE BEER-WARE LICENSE" (Revision 42):
-[Eric Wood](mailto:eric@woodtx.com) wrote this file. As long as you retain this notice you
-can do whatever you want with this stuff. If we meet some day, and you think
+##### "THE BEER-WARE LICENSE" (Revision 42):
+[Eric Wood](http://ericwood.org) wrote this file. As long as you retain this notice you<br/>
+can do whatever you want with this stuff. If we meet some day, and you think<br>
 this stuff is worth it, you can buy me a beer in return.
