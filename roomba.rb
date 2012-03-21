@@ -2,35 +2,55 @@ require 'rubygems'
 require 'serialport'
 
 class Roomba
-  # Opcodes
-  #START     = 128.chr
-  #CONTROL   = 130.chr
-  #SAFE_MODE = 131.chr
-  #FULL_MODE = 132.chr
-  #DRIVE     = 137.chr
-  START     = 0x80
-  CONTROL   = 0x82
-  SAFE_MODE = 0x83
-  FULL_MODE = 0x84
-  DRIVE     = 0x89
+  # These opcodes require no arguments
+  OPCODES = {
+    :start => 128,
+    :control => 130,
+    :safe_mode => 131,
+    :full_mode => 132,
+  }
 
-  #def serial_write(data);
-  #  p data
-  #  #data.each {|c| @serial.putc(c.chr) }
-  #  data.each {|c| @serial.putc(c) }
-  #  @serial.flush
-  #end
+  # These opcodes require arguments
+  DRIVE = 137
 
-  def serial_write(data);
-    data.map! { |i| [i].pack("C") }
-    p data
-    data.each {|c| @serial.putc(c) }
+  def write_chars(data);
+    data.each do |c|
+      c = [c].pack("C")
+      @serial.putc(c)
+    end
     @serial.flush
   end
 
+  def write_raw(data)
+    @data.each { |c| @serial.putc(c) }
+    @serial.flush
+  end
+
+  # Convert an integer into a value the roomba can use;
+  # it requires signed 16 bit integers, with the bytes flipped
+  def convert_int(int)
+    [int].pack('s').reverse
+  end
+
   def drive(velocity, radius)
-    #serial_write([DRIVE, velocity, radius])
-    serial_write([0x89,01,0x90,80,0x00])
+    velocity = convert_int(velocity)
+    radius   = convert_int(radius)
+    write_chars([DRIVE, velocity, radius])
+  end
+
+  def start
+    write_chars([START])
+  end
+
+  def control; write_chars([CONTROL]); end
+
+  def full_mode
+    write_chars([CONTROL,FULL_MODE])
+    sleep(0.2)
+  end
+
+  def power_off
+    @serial.close
   end
 
   def initialize(port)
@@ -38,32 +58,11 @@ class Roomba
     @serial = SerialPort.new(port, 57600)
     @serial.read_timeout = 1000
     self.start
-    self.control
-    self.full_mode
-    sleep(0.2)
   end
 
-  def start
-    serial_write([START])
-  end
-
-  def control
-    serial_write([CONTROL])
-  end
-
-  def full_mode
-    serial_write([CONTROL])
-    serial_write([FULL_MODE])
-  end
-
-  def quit
-    @serial.close
-  end
 end
 
 roomba = Roomba.new('/dev/tty.SerialIO1-SPP')
-roomba.serial_write([0x80])
-roomba.serial_write([0x82])
-sleep(0.2)
-roomba.serial_write([0x89,01,0x90,80,00])
-#roomba.drive(250,0)
+roomba.full_mode
+roomba.drive(250,0)
+roomba.power_off
