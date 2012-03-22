@@ -26,17 +26,23 @@ class Roomba
   # These opcodes require arguments
   DRIVE        = 137
   SONG         = 140
+  PLAY_SONG    = 141
   DRIVE_DIRECT = 145
-
+  
+  # Used for making the Roomba sing!
+  # Note that nil is simply a rest
   NOTES = {
     'A'  => 69, 'A#' => 70, 'B'  => 71, 'C'  => 72, 'C#' => 73, 'D'  => 74,
-    'D#' => 75, 'E'  => 76, 'F'  => 77, 'F#' => 78, 'G'  => 79, 'G#' => 80
+    'D#' => 75, 'E'  => 76, 'F'  => 77, 'F#' => 78, 'G'  => 79, 'G#' => 80,
+    nil => 0
   }
   
   #############################################################################
   # HELPERS                                                                   # 
   #############################################################################
   
+  # Converts input data (an array) into bytes before
+  # sending it over the serial connection.
   def write_chars(data);
     p data
     data.each do |c|
@@ -46,6 +52,7 @@ class Roomba
     @serial.flush
   end
   
+  # Pushes all data in the array over the serial connection.
   def write_raw(data)
     @data.each { |c| @serial.putc(c) }
     @serial.flush
@@ -69,8 +76,8 @@ class Roomba
   end
   
   def drive(velocity, radius)
-    return false if velocity < -500 || velocity > 500
-    return false if radius < -2000 || radius > 2000
+    raise RangeError if velocity < -500 || velocity > 500
+    raise RangeError if radius < -2000 || radius > 2000
     
     velocity = convert_int(velocity)
     radius   = convert_int(radius)
@@ -79,11 +86,34 @@ class Roomba
   end
   
   def drive_direct(left, right)
-    return false if left < -500  || left > 500
-    return false if right < -500 || right > 500
+    raise RangeError if left < -500  || left > 500
+    raise RangeError if right < -500 || right > 500
     
     write_chars([DRIVE_DIRECT])
     write_raw([right, left])
+  end
+  
+  # Songs are cool. Here's the format:
+  # The song number designates which song this is so you can recall it later.
+  # The notes are specified in the NOTES hash, and are fed into the program
+  # as a 2D array, where the first element is the note number and the second
+  # is the duration of the note. The duration is specified in seconds.
+  # Example:
+  # [[note1,5], [note2,6]]
+  def song(song_number, notes)
+    raise RangeError if song_number < 0 || song_number > 15
+    
+    # The protocol requires us to send the number of notes and the song number first
+    write_chars([SONG, song_number, notes.size])
+    notes.each do |note|
+      write_chars([ NOTES[note[0]], note[1]*64 ])
+    end
+    
+  end
+  
+  def play_song(song_number)
+    raise RangeError if song_number < 0 || song_number > 15
+    write_chars([PLAY_SONG,song_number])
   end
   
   #############################################################################
