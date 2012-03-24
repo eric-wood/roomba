@@ -7,9 +7,25 @@ In my quest to do everything in Ruby, I was shocked to discover there was no Rub
 
 Something had to be done. And this is that something.
 
+### Dependencies
+* [serialport](http://ruby-serialport.rubyforge.org/)
+
 ### Usage
 
-This will get filled out as the library is written :)
+Here's an example program:
+```ruby
+require_relative 'roomba.rb'
+r = Roomba.new('/dev/tty.SerialIO1-SPP')
+r.full_mode       # Change to full mode (unrestricted access)
+r.straight(300)   # Move forwards at 300 mm/s
+sleep(2)
+r.straight(-300)  # Move backwards at 300 mm/s
+sleep(2)
+r.spin_left(500)  # Spin to the left at 500 mm/s
+sleep(2)
+r.spin_right(500) # Spin to the right at 500 mm/s
+r.halt            # Stop moving
+```
 
 ### Roadmap
 * Add support for all Roomba SCI commands
