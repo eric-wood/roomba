@@ -1,12 +1,12 @@
 require 'rubygems'
 require 'serialport'
+require 'timeout'
 
 class Roomba
   # These opcodes require no arguments
   OPCODES = {
     :start       => 128,
     :control     => 130,
-    :safe_mode   => 131,
     :dock        => 143,
     :play_script => 153,
     :show_script => 154,
@@ -21,6 +21,7 @@ class Roomba
     end
   end
   
+  SAFE_MODE = 131
   FULL_MODE = 132
   
   # These opcodes require arguments
@@ -44,21 +45,33 @@ class Roomba
   # Converts input data (an array) into bytes before
   # sending it over the serial connection.
   def write_chars(data);
-    p data
-    data.each do |c|
-      c = [c].pack("C")
-      @serial.putc(c)
+    data.map! do |c|
+      #[c].pack("C") unless c.class == String
+      if c.class == String
+        result = c.bytes.to_a.map { |b| [b].pack("C") }
+      else
+        result = [c].pack("C")
+      end
+      
+      result
     end
+    
+    data = data.flatten.join
+
+    @serial.write(data)
+    p data
     @serial.flush
   end
   
   # Pushes all data in the array over the serial connection.
-  def write_raw(data)
-    @data.each { |c| @serial.putc(c) }
-    @serial.flush
-  end
+  # NOTE: write_chars will do the same thing, only way better
+  #def write_raw(data)
+  #  p data
+  #  data.each { |c| @serial.putc(c) }
+  #  @serial.flush
+  #end
   
-  # Convert an integer into a value the roomba can use;
+  # Convert integer to two's complement signed 16 bit integer
   # it requires signed 16 bit integers, with the bytes flipped
   def convert_int(int)
     [int].pack('s').reverse
@@ -67,27 +80,33 @@ class Roomba
   #############################################################################
   # COMMANDS                                                                  # 
   #############################################################################
+
+  def safe_mode
+    write_chars([SAFE_MODE])
+    sleep(0.2)
+  end
   
   def full_mode
     safe_mode
-    sleep(0.2) # TODO: is this necessary?
     write_chars([FULL_MODE])
     sleep(0.2)
   end
   
   def drive(velocity, radius)
     raise RangeError if velocity < -500 || velocity > 500
-    raise RangeError if radius < -2000 || radius > 2000
+    raise RangeError if (radius < -2000 || radius > 2000) && radius != 0xFFFF
     
     velocity = convert_int(velocity)
     radius   = convert_int(radius)
-    write_chars([DRIVE])
-    write_raw([velocity, radius])
+    write_chars([DRIVE, velocity, radius])
   end
   
   def drive_direct(left, right)
     raise RangeError if left < -500  || left > 500
     raise RangeError if right < -500 || right > 500
+    
+    left  = convert_int(left)
+    right = convert_int(right)
     
     write_chars([DRIVE_DIRECT])
     write_raw([right, left])
@@ -103,12 +122,9 @@ class Roomba
   def song(song_number, notes)
     raise RangeError if song_number < 0 || song_number > 15
     
+    notes.map! { |n| [NOTES[n[0]],n[1]*64] }
     # The protocol requires us to send the number of notes and the song number first
-    write_chars([SONG, song_number, notes.size])
-    notes.each do |note|
-      write_chars([ NOTES[note[0]], note[1]*64 ])
-    end
-    
+    write_chars([SONG, song_number, notes.size] + notes.flatten)
   end
   
   def play_song(song_number)
@@ -120,16 +136,23 @@ class Roomba
   # Convenience methods                                                       #
   #############################################################################
   
-  def forwards(speed)
-    drive(speed,0)
+  def straight(speed)
+    speed = convert_int(speed)
+    write_chars([DRIVE,speed,convert_int(32768)])
   end
   
-  def turn_clockwise
-    write_chars([0xFFFF])
+  def spin_left(speed)
+    speed = convert_int(speed)
+    write_chars([DRIVE,speed,convert_int(1)])
   end
   
-  def turn_counterclockwise
-    write_chars([0x0001])
+  def spin_right(speed)
+    speed = convert_int(speed)
+    write_chars([DRIVE,speed,convert_int(-1)])
+  end
+  
+  def lights
+    write_chars([139,9,0,128])
   end
   
   def halt
@@ -140,16 +163,20 @@ class Roomba
     @serial.close
   end
   
-  def initialize(port)
-    # Initialize the serialport
-    @serial = SerialPort.new(port, 57600)
-    @serial.read_timeout = 1000
-    self.start
+  def hullaballoo
+    whoop = [['E',0.2],['E',0.2],['E',0.2],['E',0.2],[nil,0.2],['E',0.2],['E',0.2],[nil,0.2],['E',0.2],['E',0.2]]
+    song(0, whoop)
+    play_song(0)
   end
   
+  def initialize(port, timeout=10)
+    @timeout = timeout
+    Timeout::timeout(@timeout) do
+      # Initialize the serialport
+      @serial = SerialPort.new(port, 57600)
+      @serial.read_timeout = 1000
+      self.start
+    end
+  end
 end
 
-roomba = Roomba.new(ARGV[0])
-roomba.full_mode
-roomba.drive(250,0)
-roomba.power_off
