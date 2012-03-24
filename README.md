@@ -13,6 +13,7 @@ Something had to be done. And this is that something.
 ### Usage
 
 Here's an example program:
+
 ```ruby
 require_relative 'roomba.rb'
 r = Roomba.new('/dev/tty.SerialIO1-SPP')
