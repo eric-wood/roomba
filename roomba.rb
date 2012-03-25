@@ -46,7 +46,6 @@ class Roomba
   # sending it over the serial connection.
   def write_chars(data);
     data.map! do |c|
-      #[c].pack("C") unless c.class == String
       if c.class == String
         result = c.bytes.to_a.map { |b| [b].pack("C") }
       else
@@ -59,20 +58,12 @@ class Roomba
     data = data.flatten.join
 
     @serial.write(data)
-    p data
     @serial.flush
   end
   
-  # Pushes all data in the array over the serial connection.
-  # NOTE: write_chars will do the same thing, only way better
-  #def write_raw(data)
-  #  p data
-  #  data.each { |c| @serial.putc(c) }
-  #  @serial.flush
-  #end
-  
-  # Convert integer to two's complement signed 16 bit integer
-  # it requires signed 16 bit integers, with the bytes flipped
+  # Convert integer to two's complement signed 16 bit integer.
+  # Note that the Roomba is big-endian...I need to fix this
+  # code to make it portable across different architectures.
   def convert_int(int)
     [int].pack('s').reverse
   end
