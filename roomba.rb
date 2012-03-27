@@ -26,6 +26,7 @@ class Roomba
   
   # These opcodes require arguments
   DRIVE        = 137
+  LEDS         = 139
   SONG         = 140
   PLAY_SONG    = 141
   DRIVE_DIRECT = 145
@@ -56,7 +57,7 @@ class Roomba
     end
     
     data = data.flatten.join
-
+    
     @serial.write(data)
     @serial.flush
   end
@@ -71,7 +72,7 @@ class Roomba
   #############################################################################
   # COMMANDS                                                                  # 
   #############################################################################
-
+  
   def safe_mode
     write_chars([SAFE_MODE])
     sleep(0.2)
@@ -101,6 +102,24 @@ class Roomba
     
     write_chars([DRIVE_DIRECT])
     write_raw([right, left])
+  end
+  
+  # Turn LEDs on and off
+  # Arguments are a hash in the following format:
+  # :advance   => true/false | sets the "advance" LED (the >> one)
+  # :play      => true/false | sets the "play" LED (the > one)
+  # :color     => 0-255      | sets the color of the power LED (0 = green, 255 = red)
+  # :intensity => 0-255      | sets the intensity of the power LED (0 = off)
+  def set_leds(args)
+    @leds[:advance]   = args[:advance]   unless args[:advance].nil?
+    @leds[:play]      = args[:play]      unless args[:play].nil?
+    @leds[:color]     = args[:color]     unless args[:color].nil?
+    @leds[:intensity] = args[:intensity] unless args[:intensity].nil?
+    led_bits  = 0b00000000
+    led_bits |= 0b00001000 if @leds[:advance]
+    led_bits |= 0b00000010 if @leds[:play]
+    
+    write_chars([LEDS, led_bits, @leds[:color], @leds[:intensity]])
   end
   
   # Songs are cool. Here's the format:
@@ -161,6 +180,13 @@ class Roomba
   end
   
   def initialize(port, timeout=10)
+    @leds = {
+      :advance   => false,
+      :play      => false,
+      :color     => 0,
+      :intensity => 0
+    }
+    
     @timeout = timeout
     Timeout::timeout(@timeout) do
       # Initialize the serialport
