@@ -15,7 +15,7 @@ Something had to be done. And this is that something.
 Here's an example program:
 
 ```ruby
-require_relative 'roomba.rb'
+require 'roomba.rb'
 r = Roomba.new('/dev/tty.SerialIO1-SPP')
 r.full_mode       # Change to full mode (unrestricted access)
 r.straight(300)   # Move forwards at 300 mm/s
@@ -30,7 +30,6 @@ r.halt            # Stop moving
 
 ### Roadmap
 * Add support for all Roomba SCI commands
-* Package this into a gem!
 * Create an optional DSL
 
 ### More Information
