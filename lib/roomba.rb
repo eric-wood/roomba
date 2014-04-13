@@ -466,13 +466,15 @@ class Roomba
   # Get sensors by list
   # Array entry can be packet ID or symbol
   def get_sensors_list(list)
-    sensors_bytes_to_packets(write_chars_with_read([QUERY_LIST,group]),list.map do |l|
+    ids_list=(list.map do |l|
       if l.class==Symbol
-        SENSORS_PACKETS_SYMBOL.find_index(l)
+        Roomba::SENSORS_PACKETS_SYMBOL.find_index(l)
       else
         l
       end
     end)
+
+    sensors_bytes_to_packets(write_chars_with_read([QUERY_LIST,ids_list.length]+ids_list),ids_list)
   end
 
   #############################################################################
