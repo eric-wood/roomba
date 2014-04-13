@@ -2,6 +2,94 @@ require 'rubygems'
 require 'serialport'
 require 'timeout'
 
+module RoombaSensor
+  class Boolean
+    def self.convert(v)
+      v==1 ? true : false
+    end
+  end
+
+  class ChargingState
+    def self.convert(v)
+      case v
+        when 0
+          :not_charging
+        when 1
+          :reconditioning_charging
+        when 2
+          :full_charging
+        when 3
+          :trickle_charging
+        when 4
+          :waiting
+        when 5
+          :charging_fault_condition
+      end
+    end
+  end
+
+  class OIMode
+    def self.convert(v)
+      case v
+        when 0
+          :off
+        when 1
+          :passive
+        when 2
+          :safe
+        when 3
+          :full
+      end
+    end
+  end
+
+  class ChargingSourceAvailable
+    def self.convert(v)
+      h={}
+      h[:internal_charger]=v & 0b1 > 0 ? true : false
+      h[:home_base]=v & 0b10 > 0 ? true : false
+      h
+    end
+  end
+
+  class LightBumper
+    def self.convert(v)
+      h={}
+      h[:light_bumper_left]=v & 0b1 > 0 ? true : false
+      h[:light_bumper_front_left]=v & 0b10 > 0 ? true : false
+      h[:light_bumper_center_left]=v & 0b100 > 0 ? true : false
+      h[:light_bumper_center_right]=v & 0b1000 > 0 ? true : false
+      h[:light_bumper_front_right]=v & 0b10000 > 0 ? true : false
+      h[:light_bumper_right]=v & 0b100000 > 0 ? true : false
+      h
+    end
+  end
+
+  class WheelOvercurrents
+    def self.convert(v)
+      h={}
+      h[:side_brush]=v & 0b1 > 0 ? true : false
+      h[:main_brush]=v & 0b100 > 0 ? true : false
+      h[:right_wheel]=v & 0b1000 > 0 ? true : false
+      h[:left_wheel]=v & 0b10000 > 0 ? true : false
+      h
+    end
+  end
+
+  class BumpsAndWheelDrops
+    def self.convert(v)
+      h={}
+      h[:bump_right]=v & 0b1 > 0 ? true : false
+      h[:bump_left]=v & 0b10 > 0 ? true : false
+      h[:wheel_drop_right]=v & 0b100 > 0 ? true : false
+      h[:wheel_drop_left]=v & 0b1000 > 0 ? true : false
+      h
+    end
+
+  end
+end
+
+
 class Roomba
   attr_accessor :serial
   # These opcodes require no arguments
@@ -35,6 +123,7 @@ class Roomba
   LEDS         = 139
   SONG         = 140
   PLAY_SONG    = 141
+  SENSORS      = 142
   DRIVE_DIRECT = 145
   
   # Used for making the Roomba sing!
@@ -44,6 +133,10 @@ class Roomba
     'D#' => 75, 'E'  => 76, 'F'  => 77, 'F#' => 78, 'G'  => 79, 'G#' => 80,
     nil => 0
   }
+
+  MOTORS_MASK_SIDE_BRUSH = 0x1
+  MOTORS_MASK_VACUUM     = 0x2
+  MOTORS_MASK_MAIN_BRUSH = 0x4
 
   SENSORS_PACKETS_SIZE =
     [
@@ -87,6 +180,65 @@ class Roomba
         :signed,:signed,:signed,:signed, # 54-57
         :unsigned # 58
     ]
+
+  # Human readable packets name
+  SENSORS_PACKETS_SYMBOL =
+  [
+      :ignore, # 0
+      :ignore,:ignore,:ignore,:ignore,:ignore,:ignore, # 1-6
+      :bumps_and_wheel_drops,:wall,:cliff_left,:cliff_front_left,:cliff_front_right,:cliff_right,:virtual_wall,:wheel_overcurrents, # 7-14
+      :dirt_detect,:ignore,:infrared_character_omni,:buttons,# 15-18
+      :distance,:angle, # 19-20
+      :charging_state, # 21
+      :voltage,:current, # 22-23
+      :temperature, # 24
+      :battery_charge,:battery_capacity,:wall_signal,:cliff_left_signal,:cliff_front_left_signal,:cliff_front_right_signal,:cliff_right_signal, # 25-31
+      :ignore, # 32
+      :ignore, # 33
+      :charging_sources_available,:oi_mode,:song_number,:song_playing,:number_of_stream_packets, # 34-38
+      :requested_velocity,:requested_radius,:requested_right_velocity,:requested_left_velocity,:right_encoder_count,:left_encoder_count, # 39-44
+      :light_bumper, # 45
+      :light_bump_left_signal,:light_bump_front_left_signal,:light_bump_center_left_signal,:light_bump_center_right_signal,:light_bump_front_right_signal,:light_bump_right_signal, # 46-51
+      :infrared_character_left,:infrared_character_right, # 52-53
+      :left_motor_current,:right_motor_current,:main_brush_motor_current,:side_brush_motor_current, # 54-57
+      :stasis # 58
+  ]
+
+  # Sensors mapper
+  SENSORS_PACKETS_VALUE =
+  {
+      :wall=>RoombaSensor::Boolean,
+      :cliff_left=>RoombaSensor::Boolean,
+      :cliff_front_left=>RoombaSensor::Boolean,
+      :cliff_front_right=>RoombaSensor::Boolean,
+      :cliff_right=>RoombaSensor::Boolean,
+      :virtual_wall=>RoombaSensor::Boolean,
+      :song_playing=>RoombaSensor::Boolean,
+
+      :charging_state=>RoombaSensor::ChargingState,
+      :oi_mode=>RoombaSensor::OIMode,
+      :charging_sources_available=>RoombaSensor::ChargingSourceAvailable,
+      :light_bumper=>RoombaSensor::LightBumper,
+      :wheel_overcurrents=>RoombaSensor::WheelOvercurrents,
+      :bumps_and_wheel_drops=>RoombaSensor::BumpsAndWheelDrops
+
+  }
+
+  # Sensors groups
+  SENSORS_GROUP_PACKETS =
+  {
+      0=>7..26,
+      1=>7..16,
+      2=>17..20,
+      3=>21..26,
+      4=>27..34,
+      5=>35..42,
+      6=>7..42,
+      100=>7..58,
+      101=>43..58,
+      106=>40..51,
+      107=>54..58
+  }
 
   #############################################################################
   # HELPERS                                                                   # 
@@ -162,8 +314,16 @@ class Roomba
 
     cur_packet=0
     packets.each do |packet|
-      packets_h[packet]=nums[cur_packet]
-      packets_h[packet]||=0
+      pname=SENSORS_PACKETS_SYMBOL[packet]
+      unless pname==:ignore
+        value=nums[cur_packet]
+        conv=SENSORS_PACKETS_VALUE[pname]
+        if conv
+          value=conv.convert(value)
+        end
+        packets_h[pname]=value
+#        packets_h[pname]||=0
+      end
       cur_packet+=1
     end
 
@@ -249,7 +409,11 @@ class Roomba
     raise RangeError if song_number < 0 || song_number > 15
     write_chars([PLAY_SONG,song_number])
   end
-  
+
+  def get_sensors(group=100)
+    sensors_bytes_to_packets(write_chars_with_read([SENSORS,group]),SENSORS_GROUP_PACKETS[group])
+  end
+
   #############################################################################
   # Convenience methods                                                       #
   #############################################################################
@@ -286,15 +450,32 @@ class Roomba
     song(0, whoop)
     play_song(0)
   end
-  
-  def get_all_sensors
-    sensors_bytes_to_packets(self.write_chars_with_read([142,100]),7..58)
+
+  def battery_percentage
+    sensors=get_sensors(3)
+    ((sensors[:battery_charge].to_f/sensors[:battery_capacity].to_f) * 100).to_i
   end
-  
-  def shutdown_drivers
+
+  def stop_all_motors
     write_chars([MOTORS,0])
   end
-  
+
+  def start_all_motors
+    write_chars([MOTORS,MOTORS_MASK_SIDE_BRUSH|MOTORS_MASK_VACUUM|MOTORS_MASK_MAIN_BRUSH])
+  end
+
+  def start_side_brush_motor
+    write_chars([MOTORS,MOTORS_MASK_SIDE_BRUSH])
+  end
+
+  def start_vacumm_motor
+    write_chars([MOTORS,MOTORS_MASK_VACUUM])
+  end
+
+  def start_main_brush_motor
+    write_chars([MOTORS,MOTORS_MASK_MAIN_BRUSH])
+  end
+
   def initialize(port, timeout=10)
     @leds = {
       :advance   => false,
