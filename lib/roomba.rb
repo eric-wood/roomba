@@ -3,10 +3,15 @@ require 'serialport'
 require 'timeout'
 
 class Roomba
+  attr_accessor :serial
   # These opcodes require no arguments
   OPCODES = {
     :start       => 128,
     :control     => 130,
+    :power       => 133,
+    :spot        => 134,
+    :clean       => 135,
+    :max         => 136,
     :dock        => 143,
     :play_script => 153,
     :show_script => 154,
@@ -26,6 +31,7 @@ class Roomba
   
   # These opcodes require arguments
   DRIVE        = 137
+  MOTORS       = 138
   LEDS         = 139
   SONG         = 140
   PLAY_SONG    = 141
@@ -38,14 +44,57 @@ class Roomba
     'D#' => 75, 'E'  => 76, 'F'  => 77, 'F#' => 78, 'G'  => 79, 'G#' => 80,
     nil => 0
   }
-  
+
+  SENSORS_PACKETS_SIZE =
+    [
+        0, # 0
+        0,0,0,0,0,0, # 1-6
+        1,1,1,1,1,1,1,1,1,1,1,1, # 7-18
+        2,2, # 19-20
+        1, # 21
+        2,2, # 22-23
+        1, # 24
+        2,2,2,2,2,2,2, # 25-31
+        1, # 32
+        2, # 33
+        1,1,1,1,1, # 34-38
+        2,2,2,2,2,2, # 39-44
+        1, # 45
+        2,2,2,2,2,2, # 46-51
+        1,1, # 52-53
+        2,2,2,2, # 54-57
+        1 # 58
+    ]
+
+  SENSORS_PACKETS_SIGNEDNESS =
+    [
+        :na, # 0
+        :na,:na,:na,:na,:na,:na, # 1-6
+        :unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned, # 7-14
+        :signed,:signed,:unsigned,:unsigned, # 15-18
+        :signed,:signed, # 19-20
+        :unsigned, # 21
+        :unsigned,:signed, # 22-23
+        :signed, # 24
+        :unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned, # 25-31
+        :unsigned, # 32
+        :unsigned, # 33
+        :unsigned,:unsigned,:unsigned,:unsigned,:unsigned, # 34-38
+        :signed,:signed,:signed,:signed,:unsigned,:unsigned, # 39-44
+        :unsigned, # 45
+        :unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned, # 46-51
+        :unsigned,:unsigned, # 52-53
+        :signed,:signed,:signed,:signed, # 54-57
+        :unsigned # 58
+    ]
+
   #############################################################################
   # HELPERS                                                                   # 
   #############################################################################
   
   # Converts input data (an array) into bytes before
   # sending it over the serial connection.
-  def write_chars(data);
+  def write_chars(data)
     data.map! do |c|
       if c.class == String
         result = c.bytes.to_a.map { |b| [b].pack("C") }
@@ -61,7 +110,66 @@ class Roomba
     @serial.write(data)
     @serial.flush
   end
-  
+
+  # Write data then read response
+  def write_chars_with_read(data)
+    data.map! do |c|
+      if c.class == String
+        result = c.bytes.to_a.map { |b| [b].pack("C") }
+      else
+        result = [c].pack("C")
+      end
+      
+      result
+    end
+    
+    data = data.flatten.join
+    
+    @serial.write(data)
+    sleep(0.1)
+    data=""
+    while(data.length==0)
+      data+=@serial.read
+    end
+    data
+  end
+
+  # Convert sensors bytes to packets hash
+  def sensors_bytes_to_packets(bytes,packets)
+    packets_h={}
+    pack=""
+    packets.each do |packet|
+      size=SENSORS_PACKETS_SIZE[packet]
+      signedness=SENSORS_PACKETS_SIGNEDNESS[packet]
+      case size
+        when 1
+          case signedness
+            when :signed
+              pack+="c"
+            when :unsigned
+              pack+="C"
+          end
+        when 2
+          case signedness
+            when :signed
+              pack+="s>"
+            when :unsigned
+              pack+="S>"
+          end
+      end
+    end
+    nums=bytes.unpack(pack)
+
+    cur_packet=0
+    packets.each do |packet|
+      packets_h[packet]=nums[cur_packet]
+      packets_h[packet]||=0
+      cur_packet+=1
+    end
+
+    packets_h
+  end
+
   # Convert integer to two's complement signed 16 bit integer.
   # Note that the Roomba is big-endian...I need to fix this
   # code to make it portable across different architectures.
@@ -179,6 +287,14 @@ class Roomba
     play_song(0)
   end
   
+  def get_all_sensors
+    sensors_bytes_to_packets(self.write_chars_with_read([142,100]),7..58)
+  end
+  
+  def shutdown_drivers
+    write_chars([MOTORS,0])
+  end
+  
   def initialize(port, timeout=10)
     @leds = {
       :advance   => false,
@@ -190,7 +306,9 @@ class Roomba
     @timeout = timeout
     Timeout::timeout(@timeout) do
       # Initialize the serialport
-      @serial = SerialPort.new(port, 57600)
+      # 115200 for Roomba 5xx
+      # 57600 for older models ?
+      @serial = SerialPort.new(port, 115200)
       @serial.read_timeout = 1000
       self.start
     end
