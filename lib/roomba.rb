@@ -87,6 +87,49 @@ module RoombaSensor
     end
 
   end
+
+  INFRARED_CHARACTER =
+  {
+      129=>:left,
+      130=>:forward,
+      131=>:right,
+      132=>:spot,
+      133=>:max,
+      134=>:small,
+      135=>:medium,
+      136=>:large,
+      137=>:stop,
+      138=>:power,
+      139=>:arc_left,
+      140=>:arc_right,
+      141=>:stop,
+      142=>:download,
+      143=>:seek_dock,
+      160=>:reserved,
+      161=>:force_field,
+      164=>:green_buoy,
+      165=>:green_buoy_and_force_field,
+      168=>:red_buoy,
+      169=>:red_buoy_and_force_field,
+      172=>:red_and_green_buoy,
+      173=>:red_and_green_buoy_and_force_field,
+      240=>:reserved,
+      248=>:red_buoy,
+      244=>:green_buoy,
+      242=>:force_field,
+      252=>:red_and_green_buoy,
+      250=>:red_buoy_and_force_field,
+      246=>:green_buoy_and_force_field,
+      254=>:red_and_green_buoy_and_force_field,
+      162=>:virtual_wall
+  }
+
+
+  class InfraredCharacter
+    def self.convert(v)
+      INFRARED_CHARACTER[v]
+    end
+  end
 end
 
 
@@ -124,6 +167,7 @@ class Roomba
   SONG         = 140
   PLAY_SONG    = 141
   SENSORS      = 142
+  QUERY_LIST      = 149
   DRIVE_DIRECT = 145
   
   # Used for making the Roomba sing!
@@ -204,7 +248,7 @@ class Roomba
       :stasis # 58
   ]
 
-  # Sensors mapper
+      # Sensors mapper
   SENSORS_PACKETS_VALUE =
   {
       :wall=>RoombaSensor::Boolean,
@@ -214,14 +258,17 @@ class Roomba
       :cliff_right=>RoombaSensor::Boolean,
       :virtual_wall=>RoombaSensor::Boolean,
       :song_playing=>RoombaSensor::Boolean,
+      :stasis=>RoombaSensor::Boolean,
 
       :charging_state=>RoombaSensor::ChargingState,
       :oi_mode=>RoombaSensor::OIMode,
       :charging_sources_available=>RoombaSensor::ChargingSourceAvailable,
       :light_bumper=>RoombaSensor::LightBumper,
       :wheel_overcurrents=>RoombaSensor::WheelOvercurrents,
-      :bumps_and_wheel_drops=>RoombaSensor::BumpsAndWheelDrops
-
+      :bumps_and_wheel_drops=>RoombaSensor::BumpsAndWheelDrops,
+      :infrared_character_omni=>RoombaSensor::InfraredCharacter,
+      :infrared_character_left=>RoombaSensor::InfraredCharacter,
+      :infrared_character_right=>RoombaSensor::InfraredCharacter
   }
 
   # Sensors groups
@@ -410,8 +457,22 @@ class Roomba
     write_chars([PLAY_SONG,song_number])
   end
 
+  # Get sensors by group
+  # Default group 100 = all packets
   def get_sensors(group=100)
     sensors_bytes_to_packets(write_chars_with_read([SENSORS,group]),SENSORS_GROUP_PACKETS[group])
+  end
+
+  # Get sensors by list
+  # Array entry can be packet ID or symbol
+  def get_sensors_list(list)
+    sensors_bytes_to_packets(write_chars_with_read([QUERY_LIST,group]),list.map do |l|
+      if l.class==Symbol
+        SENSORS_PACKETS_SYMBOL.find_index(l)
+      else
+        l
+      end
+    end)
   end
 
   #############################################################################
