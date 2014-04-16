@@ -553,7 +553,7 @@ class Roomba
       # 115200 for Roomba 5xx
       # 57600 for older models ?
       @serial = SerialPort.new(port, 115200)
-      @serial.read_timeout = 1000
+      @serial.read_timeout = 15
       self.start
     end
   end
