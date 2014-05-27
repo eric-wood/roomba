@@ -3,9 +3,17 @@ A Ruby wrapper for the Roomba Serial Command Interface
 
 - - -
 
-In my quest to do everything in Ruby, I was shocked to discover there was no Ruby gem or library for interacting with the iRobot Roomba! *gasp*
+This is a no-frills, straight-up, lots of fun implementation of the Roomba Serial Command Interface.
 
-Something had to be done. And this is that something.
+So far it supports all of the main movement functions, and a tad bit of sensor stuffs, but there are a few chunks of the API that I've left out!
+
+Originally used as part of my senior design project in school, but now gem-ified for the handful of other people who think robots and Ruby are a good combination :)
+
+For more serious robot hacking in Ruby, check out [Artoo](http://artoo.io/)! It's really neat, but possibly a little overkill for small hacks.
+
+I welcome pull requests and feedback!
+
+Happy hacking!
 
 ### Dependencies
 * [serialport](http://ruby-serialport.rubyforge.org/)
@@ -29,7 +37,7 @@ r.halt            # Stop moving
 ```
 
 ### Roadmap
-* Add support for all Roomba SCI commands
+* Add support for all Roomba SCI commands (namely sensor reading!)
 * Create an optional DSL
 
 ### More Information
@@ -39,7 +47,7 @@ The complete Roomba SCI specification can be found [here](http://www.irobot.com/
 ### License
 
 ```
-Copyright (c) 2012, Eric Wood
+Copyright (c) 2014, Eric Wood
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
