@@ -1,4 +1,4 @@
-# roomba
+# Rumba
 A Ruby wrapper for the Roomba Serial Command Interface
 
 - - -
