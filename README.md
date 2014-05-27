@@ -1,7 +1,7 @@
-[![Gem Version](https://badge.fury.io/rb/rumba.svg)](http://badge.fury.io/rb/rumba)
-
 # Rumba
 A Ruby wrapper for the Roomba Serial Command Interface
+
+[![Gem Version](https://badge.fury.io/rb/rumba.svg)](http://badge.fury.io/rb/rumba)
 
 - - -
 
