@@ -3,7 +3,7 @@ A Ruby wrapper for the Roomba Serial Command Interface
 
 - - -
 
-This is a no-frills, straight-up, lots of fun implementation of the Roomba Serial Command Interface.
+This is a no-frills, lightweight, and cross-platform implementation of the iRobot Roomba Serial Command Interface. You can use it to control your Roomba from your computer :D
 
 So far it supports all of the main movement functions, and a tad bit of sensor stuffs, but there are a few chunks of the API that I've left out!
 
