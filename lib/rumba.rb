@@ -137,15 +137,15 @@ class Roomba
   attr_accessor :serial
   # These opcodes require no arguments
   OPCODES = {
-    :start       => 128,
-    :control     => 130,
-    :power       => 133,
-    :spot        => 134,
-    :clean       => 135,
-    :max         => 136,
-    :dock        => 143,
-    :play_script => 153,
-    :show_script => 154,
+    start:        128,
+    control:      130,
+    power:        133,
+    spot:         134,
+    clean:        135,
+    max:          136,
+    dock:         143,
+    play_script:  153,
+    show_script:  154
   }
   
   # Create a method for each opcode that writes its data.
@@ -409,7 +409,7 @@ class Roomba
   end
   
   def drive_direct(left, right)
-    raise RangeError if left < -500  || left > 500
+    raise RangeError if left  < -500 || left  > 500
     raise RangeError if right < -500 || right > 500
     
     left  = convert_int(left)
@@ -483,21 +483,21 @@ class Roomba
   
   def straight(speed)
     speed = convert_int(speed)
-    write_chars([DRIVE,speed,convert_int(32768)])
+    write_chars([DRIVE, speed, convert_int(32768)])
   end
   
   def spin_left(speed)
     speed = convert_int(speed)
-    write_chars([DRIVE,speed,convert_int(1)])
+    write_chars([DRIVE, speed, convert_int(1)])
   end
   
   def spin_right(speed)
     speed = convert_int(speed)
-    write_chars([DRIVE,speed,convert_int(-1)])
+    write_chars([DRIVE, speed, convert_int(-1)])
   end
   
   def lights
-    write_chars([139,9,0,128])
+    write_chars([139, 9, 0, 128])
   end
   
   def halt
@@ -508,12 +508,6 @@ class Roomba
     @serial.close
   end
   
-  def hullaballoo
-    whoop = [['E',0.2],['E',0.2],['E',0.2],['E',0.2],[nil,0.2],['E',0.2],['E',0.2],[nil,0.2],['E',0.2],['E',0.2]]
-    song(0, whoop)
-    play_song(0)
-  end
-
   def battery_percentage
     sensors=get_sensors(3)
     ((sensors[:battery_charge].to_f/sensors[:battery_capacity].to_f) * 100).to_i
@@ -541,10 +535,10 @@ class Roomba
 
   def initialize(port, timeout=10)
     @leds = {
-      :advance   => false,
-      :play      => false,
-      :color     => 0,
-      :intensity => 0
+      advance:   false,
+      play:      false,
+      color:     0,
+      intensity: 0
     }
     
     @timeout = timeout
