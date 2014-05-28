@@ -1,4 +1,4 @@
-require 'roomba'
+require 'rumba'
 
 # Sample Roomba bump & turn
 

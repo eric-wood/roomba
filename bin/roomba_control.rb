@@ -1,4 +1,4 @@
-require 'roomba'
+require 'rumba'
 require 'pp'
 # Sample Roomba control from keyword
 
