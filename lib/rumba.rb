@@ -7,6 +7,7 @@ require 'rumba/sensors'
 class Rumba
   include Constants
   include Sensor
+  include Dsl
 
   attr_accessor :serial
 
