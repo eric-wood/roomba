@@ -1,157 +1,14 @@
 require 'rubygems'
 require 'serialport'
 require 'timeout'
-require_relative 'sensors.rb'
+require 'constants'
+require 'sensors'
 
 class Roomba
+  include Constants
+  include Sensor
+
   attr_accessor :serial
-
-  # These opcodes require no arguments
-  OPCODES = {
-    start:        128,
-    control:      130,
-    power:        133,
-    spot:         134,
-    clean:        135,
-    max:          136,
-    dock:         143,
-    play_script:  153,
-    show_script:  154
-  }
-  
-  # Create a method for each opcode that writes its data.
-  # This allows us to simply call roomba.code,
-  # and it's a cool excuse to do some metaprogramming :)
-  OPCODES.each do |name,val|
-    send :define_method, name do
-      write_chars([val])
-    end
-  end
-  
-  SAFE_MODE = 131
-  FULL_MODE = 132
-  
-  # These opcodes require arguments
-  DRIVE        = 137
-  MOTORS       = 138
-  LEDS         = 139
-  SONG         = 140
-  PLAY_SONG    = 141
-  SENSORS      = 142
-  QUERY_LIST      = 149
-  DRIVE_DIRECT = 145
-  
-  # Used for making the Roomba sing!
-  # Note that nil is simply a rest
-  NOTES = {
-    'A'  => 69, 'A#' => 70, 'B'  => 71, 'C'  => 72, 'C#' => 73, 'D'  => 74,
-    'D#' => 75, 'E'  => 76, 'F'  => 77, 'F#' => 78, 'G'  => 79, 'G#' => 80,
-    nil => 0
-  }
-
-  MOTORS_MASK_SIDE_BRUSH = 0x1
-  MOTORS_MASK_VACUUM     = 0x2
-  MOTORS_MASK_MAIN_BRUSH = 0x4
-
-  SENSORS_PACKETS_SIZE = [
-    0, # 0
-    0,0,0,0,0,0, # 1-6
-    1,1,1,1,1,1,1,1,1,1,1,1, # 7-18
-    2,2, # 19-20
-    1, # 21
-    2,2, # 22-23
-    1, # 24
-    2,2,2,2,2,2,2, # 25-31
-    1, # 32
-    2, # 33
-    1,1,1,1,1, # 34-38
-    2,2,2,2,2,2, # 39-44
-    1, # 45
-    2,2,2,2,2,2, # 46-51
-    1,1, # 52-53
-    2,2,2,2, # 54-57
-    1 # 58
-  ]
-
-  SENSORS_PACKETS_SIGNEDNESS = [
-    :na, # 0
-    :na,:na,:na,:na,:na,:na, # 1-6
-    :unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned, # 7-14
-    :signed,:signed,:unsigned,:unsigned, # 15-18
-    :signed,:signed, # 19-20
-    :unsigned, # 21
-    :unsigned,:signed, # 22-23
-    :signed, # 24
-    :unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned, # 25-31
-    :unsigned, # 32
-    :unsigned, # 33
-    :unsigned,:unsigned,:unsigned,:unsigned,:unsigned, # 34-38
-    :signed,:signed,:signed,:signed,:unsigned,:unsigned, # 39-44
-    :unsigned, # 45
-    :unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned, # 46-51
-    :unsigned,:unsigned, # 52-53
-    :signed,:signed,:signed,:signed, # 54-57
-    :unsigned # 58
-  ]
-
-  # Human readable packets name
-  SENSORS_PACKETS_SYMBOL = [
-    :ignore, # 0
-    :ignore,:ignore,:ignore,:ignore,:ignore,:ignore, # 1-6
-    :bumps_and_wheel_drops,:wall,:cliff_left,:cliff_front_left,:cliff_front_right,:cliff_right,:virtual_wall,:wheel_overcurrents, # 7-14
-    :dirt_detect,:ignore,:infrared_character_omni,:buttons,# 15-18
-    :distance,:angle, # 19-20
-    :charging_state, # 21
-    :voltage,:current, # 22-23
-    :temperature, # 24
-    :battery_charge,:battery_capacity,:wall_signal,:cliff_left_signal,:cliff_front_left_signal,:cliff_front_right_signal,:cliff_right_signal, # 25-31
-    :ignore, # 32
-    :ignore, # 33
-    :charging_sources_available,:oi_mode,:song_number,:song_playing,:number_of_stream_packets, # 34-38
-    :requested_velocity,:requested_radius,:requested_right_velocity,:requested_left_velocity,:right_encoder_count,:left_encoder_count, # 39-44
-    :light_bumper, # 45
-    :light_bump_left_signal,:light_bump_front_left_signal,:light_bump_center_left_signal,:light_bump_center_right_signal,:light_bump_front_right_signal,:light_bump_right_signal, # 46-51
-    :infrared_character_left,:infrared_character_right, # 52-53
-    :left_motor_current,:right_motor_current,:main_brush_motor_current,:side_brush_motor_current, # 54-57
-    :stasis # 58
-  ]
-
-      # Sensors mapper
-  SENSORS_PACKETS_VALUE = {
-    :wall=>RoombaSensor::Boolean,
-    :cliff_left=>RoombaSensor::Boolean,
-    :cliff_front_left=>RoombaSensor::Boolean,
-    :cliff_front_right=>RoombaSensor::Boolean,
-    :cliff_right=>RoombaSensor::Boolean,
-    :virtual_wall=>RoombaSensor::Boolean,
-    :song_playing=>RoombaSensor::Boolean,
-    :stasis=>RoombaSensor::Boolean,
-
-    :charging_state=>RoombaSensor::ChargingState,
-    :oi_mode=>RoombaSensor::OIMode,
-    :charging_sources_available=>RoombaSensor::ChargingSourceAvailable,
-    :light_bumper=>RoombaSensor::LightBumper,
-    :wheel_overcurrents=>RoombaSensor::WheelOvercurrents,
-    :bumps_and_wheel_drops=>RoombaSensor::BumpsAndWheelDrops,
-    :infrared_character_omni=>RoombaSensor::InfraredCharacter,
-    :infrared_character_left=>RoombaSensor::InfraredCharacter,
-    :infrared_character_right=>RoombaSensor::InfraredCharacter
-  }
-
-  # Sensors groups
-  SENSORS_GROUP_PACKETS = {
-    0   => 7..26,
-    1   => 7..16,
-    2   => 17..20,
-    3   => 21..26,
-    4   => 27..34,
-    5   => 35..42,
-    6   => 7..42,
-    100 => 7..58,
-    101 => 43..58,
-    106 => 40..51,
-    107 => 54..58
-  }
 
   #############################################################################
   # HELPERS                                                                   # 
@@ -194,54 +51,9 @@ class Roomba
     sleep(0.1)
     data=""
     while(data.length==0)
-      data+=@serial.read
+      data += @serial.read
     end
     data
-  end
-
-  # Convert sensors bytes to packets hash
-  def sensors_bytes_to_packets(bytes,packets)
-    packets_h = {}
-    pack = ""
-    packets.each do |packet|
-      size = SENSORS_PACKETS_SIZE[packet]
-      signedness = SENSORS_PACKETS_SIGNEDNESS[packet]
-      case size
-        when 1
-          case signedness
-            when :signed
-              pack += "c"
-            when :unsigned
-              pack += "C"
-          end
-        when 2
-          case signedness
-            when :signed
-              pack += "s>"
-            when :unsigned
-              pack += "S>"
-          end
-      end
-    end
-
-    nums = bytes.unpack(pack)
-
-    cur_packet = 0
-    packets.each do |packet|
-      pname = SENSORS_PACKETS_SYMBOL[packet]
-      unless pname == :ignore
-        value = nums[cur_packet]
-        conv = SENSORS_PACKETS_VALUE[pname]
-        if conv
-          value = conv.convert(value)
-        end
-        packets_h[pname] = value
-      end
-
-      cur_packet+=1
-    end
-
-    packets_h
   end
 
   # Convert integer to two's complement signed 16 bit integer.
@@ -324,26 +136,6 @@ class Roomba
     write_chars([PLAY_SONG,song_number])
   end
 
-  # Get sensors by group
-  # Default group 100 = all packets
-  def get_sensors(group=100)
-    sensors_bytes_to_packets(write_chars_with_read([SENSORS,group]),SENSORS_GROUP_PACKETS[group])
-  end
-
-  # Get sensors by list
-  # Array entry can be packet ID or symbol
-  def get_sensors_list(list)
-    ids_list=(list.map do |l|
-      if l.class == Symbol
-        Roomba::SENSORS_PACKETS_SYMBOL.find_index(l)
-      else
-        l
-      end
-    end)
-
-    sensors_bytes_to_packets(write_chars_with_read([QUERY_LIST,ids_list.length]+ids_list),ids_list)
-  end
-
   #############################################################################
   # Convenience methods                                                       #
   #############################################################################
@@ -376,7 +168,7 @@ class Roomba
   end
   
   def battery_percentage
-    sensors=get_sensors(3)
+    sensors = get_sensors(3)
     ((sensors[:battery_charge].to_f / sensors[:battery_capacity].to_f) * 100).to_i
   end
 
@@ -400,7 +192,7 @@ class Roomba
     write_chars([MOTORS,MOTORS_MASK_MAIN_BRUSH])
   end
 
-  def initialize(port, timeout=10)
+  def initialize(port, timeout=10, baud=115200, &block)
     @leds = {
       advance:   false,
       play:      false,
@@ -413,9 +205,17 @@ class Roomba
       # Initialize the serialport
       # 115200 for Roomba 5xx
       # 57600 for older models ?
-      @serial = SerialPort.new(port, 115200)
+      @serial = SerialPort.new(port, baud)
       @serial.read_timeout = 15
       self.start
+
+      # initialize the "DSL" here!
+      if block_given?
+        instance_eval(&block)
+
+        # clean up after ourselves (this is a Roomba, after all!)
+        self.power_off
+      end
     end
   end
 end
