@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.description = 'Control your Roomba using Ruby!'
   s.authors     = ['Eric Wood']
   s.email       = 'eric@ericwood.org'
-  s.files       = ['lib/rumba.rb', 'lib/sensors.rb', 'lib/constants.rb']
+  s.files       = Dir["lib/**/*.rb", "README.md", "LICENSE"]
   s.homepage    = 'http://github.com/eric-wood/roomba'
   s.license     = 'BSD'
 

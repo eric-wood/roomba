@@ -1,7 +1,7 @@
 # This library has a TON of annoying constants...
 # we have quarantined them here to save your eyes
 
-class Roomba
+class Rumba
   module Constants
     # These opcodes require no arguments
     OPCODES = {

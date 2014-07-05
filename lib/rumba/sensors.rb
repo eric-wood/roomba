@@ -1,6 +1,6 @@
 # Sensor-related code is all here!
 
-class Roomba
+class Rumba
   module Sensor
     class Boolean
       def self.convert(v)
@@ -284,7 +284,7 @@ class Roomba
     def get_sensors_list(list)
       ids_list=(list.map do |l|
         if l.class == Symbol
-          Roomba::SENSORS_PACKETS_SYMBOL.find_index(l)
+          SENSORS_PACKETS_SYMBOL.find_index(l)
         else
           l
         end

@@ -26,7 +26,7 @@ Here's an example program:
 
 ```ruby
 require 'roomba.rb'
-r = Roomba.new('/dev/tty.SerialIO1-SPP')
+r = Rumba.new('/dev/tty.SerialIO1-SPP')
 r.full_mode       # Change to full mode (unrestricted access)
 r.straight(300)   # Move forwards at 300 mm/s
 sleep(2)

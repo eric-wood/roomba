@@ -1,10 +1,10 @@
 require 'rubygems'
 require 'serialport'
 require 'timeout'
-require 'constants'
-require 'sensors'
+require 'rumba/constants'
+require 'rumba/sensors'
 
-class Roomba
+class Rumba
   include Constants
   include Sensor
 
