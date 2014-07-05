@@ -2,7 +2,7 @@ require 'rumba'
 require 'pp'
 # Sample Roomba control from keyword
 
-r = Roomba.new('/dev/ttyACM0')
+r = Rumba.new('/dev/ttyACM0')
 r.safe_mode
 system 'stty cbreak'
 $stdout.syswrite 'How now: '

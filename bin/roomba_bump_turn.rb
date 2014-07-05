@@ -10,7 +10,7 @@ else
   speed=200
 end
 
-r = Roomba.new('/dev/ttyACM0')
+r = Rumba.new('/dev/ttyACM0')
 r.safe_mode
 r.start_all_motors
 
