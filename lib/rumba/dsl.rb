@@ -36,10 +36,10 @@ class Rumba
           direction = 90
       end
 
-      circumfrence = Math::PI * (RADIUS**2)
+      circumfrence = 2 * Math::PI * RADIUS
 
       # based on the angle, this is how far we need to turn
-      distance = (circumfrence / 360) * direction
+      Math.abs(distance = (circumfrence / 360) * direction)
 
       direction < 0 ? spin_left(speed) : spin_right(speed)
       duration = distance / speed
@@ -60,5 +60,10 @@ class Rumba
     def meters(num)
       num * 1000
     end
+
+    # eh, why not?
+    alias_method :forwards, :forward
+    alias_method :backwards, :backward
+    alias_method :turn, :rotate
   end
 end
