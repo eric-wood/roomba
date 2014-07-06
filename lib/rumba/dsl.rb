@@ -5,6 +5,9 @@ class Rumba
   module Dsl
     # Remember, Roomba speeds are defined in mm/s (max is 200)
     DEFAULT_SPEED = 100
+
+    # Radius of an average Roomba, used for calculating rotation
+    RADIUS = 20
     
     # distance is in mm!
     def forward(distance, speed: DEFAULT_SPEED)
@@ -28,12 +31,20 @@ class Rumba
       # handle symbols...
       case direction
         when :left
-          direction = -45
+          direction = -90
         when :right
-          direction = 45
+          direction = 90
       end
 
-      # TODO: issue drive commands based on calculations!
+      circumfrence = Math::PI * (RADIUS**2)
+
+      # based on the angle, this is how far we need to turn
+      distance = (circumfrence / 360) * direction
+
+      direction < 0 ? spin_left(speed) : spin_right(speed)
+      duration = distance / speed
+      sleep(duration)
+      halt
     end
 
     # MEASUREMENT HELPERS
