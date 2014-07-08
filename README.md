@@ -7,7 +7,7 @@ A Ruby wrapper for the Roomba Serial Command Interface
 
 This is a no-frills, lightweight, and cross-platform implementation of the iRobot Roomba Serial Command Interface. You can use it to control your Roomba from your computer :D
 
-So far it supports all of the main movement functions, and a tad bit of sensor stuffs, but there are a few chunks of the API that I've left out!
+Practically all of the interesting parts of the SCI have been implemented. There's also an optional DSL that only supports movements currently (but is under active development!).
 
 Originally used as part of my senior design project in school, but now gem-ified for the handful of other people who think robots and Ruby are a good combination :)
 
@@ -24,9 +24,30 @@ Happy hacking!
 
 Here's an example program:
 
+(using the experimental DSL)
+
 ```ruby
-require 'roomba.rb'
-r = Rumba.new('/dev/tty.SerialIO1-SPP')
+require 'rumba'
+
+Roomba.new('/dev/tty.usbserial') do
+  safe_mode
+  forward meter(1)
+  rotate :left
+  rotate -90 # degrees
+
+  rotate :right
+  rotate 90
+  backward meter(1)
+
+  # access to any methods in the Roomba class here!
+end
+```
+
+(the old-fashioned way!)
+
+```ruby
+require 'rumba'
+r = Roomba.new('/dev/tty.SerialIO1-SPP')
 r.full_mode       # Change to full mode (unrestricted access)
 r.straight(300)   # Move forwards at 300 mm/s
 sleep(2)
@@ -39,8 +60,10 @@ r.halt            # Stop moving
 ```
 
 ### Roadmap
-* Add support for all Roomba SCI commands (namely sensor reading!)
-* Create an optional DSL
+* Create an optional DSL (IN PROGRESS!)
+* REAL documentation!
+* ???
+* idk
 
 ### More Information
 

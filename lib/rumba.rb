@@ -219,3 +219,5 @@ class Rumba
   end
 end
 
+# Alias for backwards-compatibility
+Roomba = Rumba
