@@ -20,6 +20,14 @@ Happy hacking!
 ### Dependencies
 * [serialport](http://ruby-serialport.rubyforge.org/)
 
+### Installation
+
+Easy!
+
+```bash
+gem install rumba
+```
+
 ### Usage
 
 Here's an example program:
