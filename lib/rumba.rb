@@ -3,6 +3,7 @@ require 'serialport'
 require 'timeout'
 require 'rumba/constants'
 require 'rumba/sensors'
+require 'rumba/dsl'
 
 class Rumba
   include Constants
@@ -193,7 +194,7 @@ class Rumba
     write_chars([MOTORS,MOTORS_MASK_MAIN_BRUSH])
   end
 
-  def initialize(port, timeout=10, baud=115200, &block)
+  def initialize(port, baud=57600, &block)
     @leds = {
       advance:   false,
       play:      false,
@@ -201,22 +202,19 @@ class Rumba
       intensity: 0
     }
     
-    @timeout = timeout
-    Timeout::timeout(@timeout) do
-      # Initialize the serialport
-      # 115200 for Roomba 5xx
-      # 57600 for older models ?
-      @serial = SerialPort.new(port, baud)
-      @serial.read_timeout = 15
-      self.start
+    # Initialize the serialport
+    # 115200 for Roomba 5xx
+    # 57600 for older models (and iRobot Create)
+    @serial = SerialPort.new(port, baud)
+    @serial.read_timeout = 15
+    self.start
 
-      # initialize the "DSL" here!
-      if block_given?
-        instance_eval(&block)
+    # initialize the "DSL" here!
+    if block_given?
+      instance_eval(&block)
 
-        # clean up after ourselves (this is a Roomba, after all!)
-        self.power_off
-      end
+      # clean up after ourselves (this is a Roomba, after all!)
+      self.power_off
     end
   end
 end
