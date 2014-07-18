@@ -1,5 +1,5 @@
 require 'rubygems'
-require 'serialport'
+require 'rubyserial'
 require 'timeout'
 require 'rumba/constants'
 require 'rumba/sensors'
