@@ -8,21 +8,34 @@ class Rumba
 
     # Radius of an average Roomba, used for calculating rotation
     RADIUS = 165.1 # 6.5 inches
+
+    # move both wheels at the same speed in a certain direction!
+    # NOTE THAT THIS BLOCKS UNTIL COMPLETE
+    def straight_distance(distance, speed: DEFAULT_SPEED)
+      total = 0
+      straight(speed)
+
+      # TODO: make this a select loop? not sure.
+      # will be using a sleep for now, because why not...
+      loop do
+        distance = get_sensors_list([:distance])[:distance]
+        total += distance
+        break if total >= distance
+
+        sleep 0.1
+      end
+
+      halt
+    end
     
     # distance is in mm!
     def forward(distance, speed: DEFAULT_SPEED)
-      duration = distance / speed
-      straight(speed)
-      sleep(duration)
-      halt
+      straight_distance(distance, speed)
     end
 
     # distance is in mm!
     def backward(distance, speed: DEFAULT_SPEED)
-      duration = distance / speed
-      straight(-speed)
-      sleep(duration)
-      halt
+      straight_distance(distance, -speed)
     end
 
     # Direction can either be a Fixnum for number of degrees,
@@ -36,14 +49,22 @@ class Rumba
           direction = 90
       end
 
-      circumfrence = 2 * Math::PI * RADIUS
 
-      # based on the angle, this is how far we need to turn
-      distance = ((circumfrence / 360) * direction).abs
+      total = 0
 
-      direction < 0 ? spin_left(speed) : spin_right(speed)
-      duration = (distance / speed).abs
-      sleep(duration)
+      # TODO: make this a select loop? not sure.
+      # will be using a sleep for now, because why not...
+      loop do
+        raw_angle = get_sensors_list([:angle])[:angle]
+
+        # taken from the official docs to convert output to degrees...
+        degrees = (360 * raw_angle)/(258 * Math::PI)
+        total += degrees
+        break if total >= direction
+
+        sleep 0.1
+      end
+
       halt
     end
 
