@@ -12,20 +12,25 @@ class Rumba
     # move both wheels at the same speed in a certain direction!
     # NOTE THAT THIS BLOCKS UNTIL COMPLETE
     def straight_distance(distance, speed: DEFAULT_SPEED)
+      puts "going straight"
       total = 0
       straight(speed)
+      sleep 1
+      halt
 
       # TODO: make this a select loop? not sure.
       # will be using a sleep for now, because why not...
-      loop do
-        distance = get_sensors_list([:distance])[:distance]
-        total += distance
-        break if total >= distance
+      #100.times do
+      #  puts "doin shit"
+      #  distance = get_sensors_list([:distance])[:distance]
+      #  puts distance
+      #  total += distance
+      #  break if total >= distance
 
-        sleep 0.1
-      end
+      #  sleep 0.1
+      #end
 
-      halt
+      #halt
     end
     
     # distance is in mm!

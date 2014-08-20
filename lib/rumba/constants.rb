@@ -35,7 +35,7 @@ class Rumba
     SONG         = 140
     PLAY_SONG    = 141
     SENSORS      = 142
-    QUERY_LIST      = 149
+    QUERY_LIST   = 149
     DRIVE_DIRECT = 145
 
     # Used for making the Roomba sing!
