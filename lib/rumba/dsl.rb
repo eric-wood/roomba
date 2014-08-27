@@ -60,26 +60,28 @@ class Rumba
       halt
     end
 
-    # MEASUREMENT HELPERS
-    # TODO: break these out into separate helpers file?
-    def inches(num)
-      25.4 * num
-    end
-    alias_method :inch, :inches
-
-    def feet(num)
-      inches(num) * 12
-    end
-    alias_method :foot, :feet
-
-    def meters(num)
-      num * 1000
-    end
-    alias_method :meter, :meters
-
     # eh, why not?
     alias_method :forwards, :forward
     alias_method :backwards, :backward
     alias_method :turn, :rotate
   end
 end
+
+# MEASUREMENT HELPERS
+class Fixnum
+  def inches
+    25.4 * self
+  end
+  alias_method :inch, :inches
+
+  def feet
+    self.inches * 12
+  end
+  alias_method :foot, :feet
+
+  def meters
+    self * 1000
+  end
+  alias_method :meter, :meters
+end
+

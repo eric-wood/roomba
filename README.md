@@ -39,13 +39,13 @@ require 'rumba'
 
 Roomba.new('/dev/tty.usbserial') do
   safe_mode
-  forward meter(1)
+  forward 1.meter
   rotate :left
   rotate -90 # degrees
 
   rotate :right
   rotate 90
-  backward meter(1)
+  backward 1.meter
 
   # access to any methods in the Roomba class here!
 end
