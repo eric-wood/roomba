@@ -1,5 +1,5 @@
 require 'rubygems'
-require 'rubyserial'
+require 'serialport'
 require 'timeout'
 require 'rumba/constants'
 require 'rumba/sensors'
@@ -205,7 +205,7 @@ class Rumba
     # Initialize the serialport
     # 115200 for Roomba 5xx
     # 57600 for older models (and iRobot Create)
-    @serial = Serial.new(port, baud)
+    @serial = SerialPort.new(port, baud)
     @serial.read_timeout = 15
     self.start
 
