@@ -36,27 +36,25 @@ class Rumba
     # or a symbol for the direction (:left, :right)
     def rotate(direction, speed: DEFAULT_SPEED)
       # handle symbols...
+      # note that counter-clockwise is positive
       case direction
         when :left
-          direction = -90
-        when :right
           direction = 90
+        when :right
+          direction = -90
       end
 
+      direction > 0 ? spin_right(speed) : spin_left(speed)
 
       total = 0
-
-      # TODO: make this a select loop? not sure.
-      # will be using a sleep for now, because why not...
+      goal  = direction.abs / 2
       loop do
-        raw_angle = get_sensors_list([:angle])[:angle]
+        raw_angle = get_sensor(:angle)
 
         # taken from the official docs to convert output to degrees...
         degrees = (360 * raw_angle)/(258 * Math::PI)
-        total += degrees
-        break if total >= direction
-
-        sleep 0.1
+        total += degrees.abs
+        break if total >= goal
       end
 
       halt

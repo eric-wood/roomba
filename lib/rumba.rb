@@ -50,7 +50,7 @@ class Rumba
     data = data.flatten.join
     
     @serial.write(data)
-    sleep(0.1)
+    sleep(0.05)
     data=""
     while(data.length==0)
       data += @serial.read
