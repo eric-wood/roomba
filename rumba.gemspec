@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = 'rumba'
-  s.version     = '0.2.5'
-  s.date        = '2014-05-27'
+  s.version     = '0.2.6'
+  s.date        = '2014-08-26'
   s.summary     = 'Ruby bindings for the iRobot Roomba'
   s.description = 'Control your Roomba using Ruby!'
   s.authors     = ['Eric Wood']
