@@ -195,6 +195,14 @@ class Rumba
   end
 
   def initialize(port, baud=57600, &block)
+    # when the program is killed, stop the Roomba
+    trap("INT") do
+      self.halt
+      self.stop_all_motors
+      self.power_off
+      exit
+    end
+
     @leds = {
       advance:   false,
       play:      false,

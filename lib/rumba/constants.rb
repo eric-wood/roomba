@@ -29,14 +29,20 @@ class Rumba
     FULL_MODE = 132
 
     # These opcodes require arguments
-    DRIVE        = 137
-    MOTORS       = 138
-    LEDS         = 139
-    SONG         = 140
-    PLAY_SONG    = 141
-    SENSORS      = 142
-    QUERY_LIST   = 149
-    DRIVE_DIRECT = 145
+    DRIVE         = 137
+    MOTORS        = 138
+    LEDS          = 139
+    SONG          = 140
+    PLAY_SONG     = 141
+    SENSORS       = 142
+    DRIVE_DIRECT  = 145
+    STREAM        = 148
+    QUERY_LIST    = 149
+    PAUSE_STREAM  = 150
+    RESUME_STREAM = 150
+    WAIT_DISTANCE = 156
+    WAIT_ANGLE    = 157
+    WAIT_EVENT    = 158
 
     # Used for making the Roomba sing!
     # Note that nil is simply a rest
