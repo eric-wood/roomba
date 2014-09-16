@@ -45,7 +45,7 @@ class Rumba
     class ChargingSourceAvailable
       def self.convert(v)
         h = {}
-        h[:internal_charger] = v & 0b1  > 0
+        h[:internal_charger] = v & 0b01 > 0
         h[:home_base]        = v & 0b10 > 0
         h
       end
@@ -54,11 +54,11 @@ class Rumba
     class LightBumper
       def self.convert(v)
         h = {}
-        h[:light_bumper_left]         = v & 0b1      > 0
-        h[:light_bumper_front_left]   = v & 0b10     > 0
-        h[:light_bumper_center_left]  = v & 0b100    > 0
-        h[:light_bumper_center_right] = v & 0b1000   > 0
-        h[:light_bumper_front_right]  = v & 0b10000  > 0
+        h[:light_bumper_left]         = v & 0b000001 > 0
+        h[:light_bumper_front_left]   = v & 0b000010 > 0
+        h[:light_bumper_center_left]  = v & 0b000100 > 0
+        h[:light_bumper_center_right] = v & 0b001000 > 0
+        h[:light_bumper_front_right]  = v & 0b010000 > 0
         h[:light_bumper_right]        = v & 0b100000 > 0
         h
       end
@@ -67,9 +67,9 @@ class Rumba
     class WheelOvercurrents
       def self.convert(v)
         h = {}
-        h[:side_brush]  = v & 0b1     > 0
-        h[:main_brush]  = v & 0b100   > 0
-        h[:right_wheel] = v & 0b1000  > 0
+        h[:side_brush]  = v & 0b00001 > 0
+        h[:main_brush]  = v & 0b00100 > 0
+        h[:right_wheel] = v & 0b01000 > 0
         h[:left_wheel]  = v & 0b10000 > 0
         h
       end
@@ -78,9 +78,9 @@ class Rumba
     class BumpsAndWheelDrops
       def self.convert(v)
         h = {}
-        h[:bump_right]       = v & 0b1    > 0
-        h[:bump_left]        = v & 0b10   > 0
-        h[:wheel_drop_right] = v & 0b100  > 0
+        h[:bump_right]       = v & 0b0001 > 0
+        h[:bump_left]        = v & 0b0010 > 0
+        h[:wheel_drop_right] = v & 0b0100 > 0
         h[:wheel_drop_left]  = v & 0b1000 > 0
         h
       end
