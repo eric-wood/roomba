@@ -36,6 +36,7 @@ class Rumba
   end
 
   # Write data then read response
+  # TODO: deprecate this (only used by get_sensors)
   def write_chars_with_read(data)
     data.map! do |c|
       if c.class == String
@@ -50,11 +51,13 @@ class Rumba
     data = data.flatten.join
     
     @serial.write(data)
-    sleep(0.05)
-    data=""
-    while(data.length==0)
+
+    data = ""
+    sleep 0.05
+    while(data.length == 0)
       data += @serial.read
     end
+
     data
   end
 
@@ -214,7 +217,7 @@ class Rumba
     # 115200 for Roomba 5xx
     # 57600 for older models (and iRobot Create)
     @serial = SerialPort.new(port, baud)
-    @serial.read_timeout = 15
+    @serial.read_timeout = 1000
     self.start
 
     # initialize the "DSL" here!

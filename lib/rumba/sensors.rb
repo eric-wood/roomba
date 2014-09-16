@@ -45,7 +45,7 @@ class Rumba
     class ChargingSourceAvailable
       def self.convert(v)
         h = {}
-        h[:internal_charger] = v & 0b1 > 0
+        h[:internal_charger] = v & 0b1  > 0
         h[:home_base]        = v & 0b10 > 0
         h
       end
@@ -54,11 +54,11 @@ class Rumba
     class LightBumper
       def self.convert(v)
         h = {}
-        h[:light_bumper_left]         = v & 0b1 > 0
-        h[:light_bumper_front_left]   = v & 0b10 > 0
-        h[:light_bumper_center_left]  = v & 0b100 > 0
-        h[:light_bumper_center_right] = v & 0b1000 > 0
-        h[:light_bumper_front_right]  = v & 0b10000 > 0
+        h[:light_bumper_left]         = v & 0b1      > 0
+        h[:light_bumper_front_left]   = v & 0b10     > 0
+        h[:light_bumper_center_left]  = v & 0b100    > 0
+        h[:light_bumper_center_right] = v & 0b1000   > 0
+        h[:light_bumper_front_right]  = v & 0b10000  > 0
         h[:light_bumper_right]        = v & 0b100000 > 0
         h
       end
@@ -78,9 +78,9 @@ class Rumba
     class BumpsAndWheelDrops
       def self.convert(v)
         h = {}
-        h[:bump_right]       = v & 0b1 > 0
-        h[:bump_left]        = v & 0b10 > 0
-        h[:wheel_drop_right] = v & 0b100 > 0
+        h[:bump_right]       = v & 0b1    > 0
+        h[:bump_left]        = v & 0b10   > 0
+        h[:wheel_drop_right] = v & 0b100  > 0
         h[:wheel_drop_left]  = v & 0b1000 > 0
         h
       end
@@ -128,7 +128,7 @@ class Rumba
       end
     end
 
-    SENSORS_PACKETS_SIZE = [
+    SENSOR_PACKET_SIZE = [
       0, # 0
       0,0,0,0,0,0, # 1-6
       1,1,1,1,1,1,1,1,1,1,1,1, # 7-18
@@ -148,7 +148,7 @@ class Rumba
       1 # 58
     ]
 
-    SENSORS_PACKETS_SIGNEDNESS = [
+    SENSOR_PACKET_SIGNEDNESS = [
       :na, # 0
       :na,:na,:na,:na,:na,:na, # 1-6
       :unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned,:unsigned, # 7-14
@@ -169,8 +169,8 @@ class Rumba
       :unsigned # 58
     ]
 
-    # Human readable packets name
-    SENSORS_PACKETS_SYMBOL = [
+    # Human readable packet names
+    SENSOR_SYMBOLS = [
       :ignore, # 0
       :ignore,:ignore,:ignore,:ignore,:ignore,:ignore, # 1-6
       :bumps_and_wheel_drops,:wall,:cliff_left,:cliff_front_left,:cliff_front_right,:cliff_right,:virtual_wall,:wheel_overcurrents, # 7-14
@@ -191,8 +191,8 @@ class Rumba
       :stasis # 58
     ]
 
-    # Sensors mapper
-    SENSORS_PACKETS_VALUE = {
+    # Sensor mapper
+    SENSOR_PACKET_VALUE = {
       wall:                       Boolean,
       cliff_left:                 Boolean,
       cliff_front_left:           Boolean,
@@ -229,68 +229,78 @@ class Rumba
     }
 
     # Convert sensors bytes to packets hash
-    def sensors_bytes_to_packets(bytes,packets)
-      packets_h = {}
-      pack = ""
+    def sensor_bytes_to_packets(bytes, packets)
+      # template string for unpacking the data
+      pack = ''
       packets.each do |packet|
-        size = SENSORS_PACKETS_SIZE[packet]
-        signedness = SENSORS_PACKETS_SIGNEDNESS[packet]
+        size = SENSOR_PACKET_SIZE[packet]
+        signedness = SENSOR_PACKET_SIGNEDNESS[packet]
         case size
-        when 1
+        when 1 # 8 bit (big endian)
           case signedness
           when :signed
-            pack += "c"
+            pack << 'c'
           when :unsigned
-            pack += "C"
+            pack << 'C'
           end
-        when 2
+        when 2 # 16 bit (big endian)
           case signedness
           when :signed
-            pack += "s>"
+            pack << 's>'
           when :unsigned
-            pack += "S>"
+            pack << 'S>'
           end
         end
       end
 
-      nums = bytes.unpack(pack)
+      data = bytes.unpack(pack)
 
-      cur_packet = 0
-      packets.each do |packet|
-        pname = SENSORS_PACKETS_SYMBOL[packet]
-        unless pname == :ignore
-          value = nums[cur_packet]
-          conv = SENSORS_PACKETS_VALUE[pname]
-          if conv
-            value = conv.convert(value)
-          end
-          packets_h[pname] = value
+      results = {}
+      packets.each_with_index do |packet,index|
+        packet_name = SENSOR_SYMBOLS[packet]
+        unless packet_name == :ignore
+          value = data[index]
+
+          # map to native Ruby type
+          converter = SENSOR_PACKET_VALUE[packet_name]
+          value = converter.convert(value) if converter
+
+          results[packet_name] = value
         end
-
-        cur_packet += 1
       end
 
-      packets_h
+      results
     end
 
     # Get sensors by group
     # Default group 100 = all packets
     def get_sensors(group=100)
-      sensors_bytes_to_packets(write_chars_with_read([SENSORS,group]),SENSORS_GROUP_PACKETS[group])
+      raw_data = write_chars_with_read([SENSORS,group])
+      sensor_bytes_to_packets(raw_data, SENSORS_GROUP_PACKETS[group])
     end
 
     # Get sensors by list
     # Array entry can be packet ID or symbol
-    def get_sensors_list(list)
-      ids_list = list.map { |l|
-        if l.class == Symbol
-          SENSORS_PACKETS_SYMBOL.find_index(l)
+    def get_sensors_list(sensors)
+      # convert from symbols to IDs
+      sensors.map! do |sensor|
+        if sensor.class == Symbol
+          SENSOR_SYMBOLS.find_index(l)
         else
           l
         end
-      }
+      end
 
-      sensors_bytes_to_packets(write_chars_with_read([Constants::QUERY_LIST,ids_list.length]+ids_list),ids_list)
+      # request sensor data!
+      request = [Constants::QUERY_LIST, sensors.length] + sensors
+      write_chars(request)
+
+      raw_data = ""
+      sensors.each do |id|
+        raw_data << @serial.read(SENSOR_PACKET_SIZE[id])
+      end
+
+      sensor_bytes_to_packets(raw_data, sensors)
     end
 
     # convenience method for grabbing a single sensor
