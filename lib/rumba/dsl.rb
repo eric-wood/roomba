@@ -6,9 +6,6 @@ class Rumba
     # Remember, Roomba speeds are defined in mm/s (max is 200)
     DEFAULT_SPEED = 200
 
-    # Radius of an average Roomba, used for calculating rotation
-    RADIUS = 165.1 # 6.5 inches
-
     # move both wheels at the same speed in a certain direction!
     # NOTE THAT THIS BLOCKS UNTIL COMPLETE
     def straight_distance(distance, speed: DEFAULT_SPEED)

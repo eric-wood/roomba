@@ -1,50 +1,41 @@
-$LOAD_PATH << File.expand_path('../../lib', __FILE__)
 require 'rumba'
 
 # Sample Roomba bump & turn
 
-speed=ARGV[0]
+speed = ARGV[0]
+speed = speed ? speed.to_i : 200
 
-if speed
-  speed=speed.to_i
-else
-  speed=200
-end
+Rumba.new('/dev/tty.usbserial') do
+  safe_mode
+  start_all_motors
 
-r = Rumba.new('/dev/tty.usbserial')
-r.safe_mode
-r.start_all_motors
-
-begin
   loop do
-    bumps=r.get_sensors_list([:bumps_and_wheel_drops])[:bumps_and_wheel_drops]
+    bumps = get_sensor(:bumps_and_wheel_drops)
+
     if bumps[:bump_left]
-      r.halt
+      halt
       sleep 0.1
-      r.spin_right(speed)
+      spin_right(speed)
       sleep 1
-      r.halt
+      halt
       sleep 0.1
     else
       if bumps[:bump_right]
-        r.halt
+        halt
         sleep 0.1
-        r.spin_left(speed)
+        spin_left(speed)
         sleep 1
-        r.halt
+        halt
         sleep 0.1
       end
     end
 
-    if bumps[:wheel_drop_right]|bumps[:wheel_drop_left]
-      r.halt
+    if bumps[:wheel_drop_right] | bumps[:wheel_drop_left]
+      halt
     else
-      r.straight(speed)
+      straight(speed)
     end
 
     sleep 0.1
   end
-rescue SystemExit, Interrupt
-  r.stop_all_motors
-  r.halt
 end

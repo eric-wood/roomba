@@ -62,10 +62,8 @@ class Rumba
   end
 
   # Convert integer to two's complement signed 16 bit integer.
-  # Note that the Roomba is big-endian...I need to fix this
-  # code to make it portable across different architectures.
   def convert_int(int)
-    [int].pack('s').reverse
+    [int].pack('s>').reverse
   end
   
   #############################################################################
