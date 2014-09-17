@@ -20,7 +20,7 @@ class Rumba
   # sending it over the serial connection.
   def write_chars(data)
     data.map! do |c|
-      if c.class == String
+      if c.is_a?(String)
         result = c.bytes.to_a.map { |b| [b].pack("C") }
       else
         result = [c].pack("C")
@@ -129,7 +129,14 @@ class Rumba
   def song(song_number, notes)
     raise RangeError if song_number < 0 || song_number > 15
     
-    notes.map! { |n| [NOTES[n[0]],n[1]*64] }
+    notes.map! do |i|
+      note, duration = i
+
+      # notes can either be a string or the actual ID
+      note = NOTES[note] if note.is_a?(String)
+      [note, duration*64]
+    end
+
     # The protocol requires us to send the number of notes and the song number first
     write_chars([SONG, song_number, notes.size] + notes.flatten)
   end

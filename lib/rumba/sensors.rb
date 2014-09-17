@@ -84,7 +84,6 @@ class Rumba
         h[:wheel_drop_left]  = v & 0b1000 > 0
         h
       end
-
     end
 
     INFRARED_CHARACTER = {
