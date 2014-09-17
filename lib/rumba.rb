@@ -38,11 +38,12 @@ class Rumba
   # Write data then read response
   # TODO: deprecate this (only used by get_sensors)
   def write_chars_with_read(data)
+    pack = 'C'
     data.map! do |c|
       if c.class == String
-        result = c.bytes.to_a.map { |b| [b].pack("C") }
+        result = c.bytes.to_a.map { |b| [b].pack(pack) }
       else
-        result = [c].pack("C")
+        result = [c].pack(pack)
       end
       
       result
@@ -63,7 +64,7 @@ class Rumba
 
   # Convert integer to two's complement signed 16 bit integer.
   def convert_int(int)
-    [int].pack('s>').reverse
+    [int].pack('s').reverse
   end
   
   #############################################################################

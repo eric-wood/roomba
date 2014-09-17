@@ -284,9 +284,9 @@ class Rumba
       # convert from symbols to IDs
       sensors.map! do |sensor|
         if sensor.class == Symbol
-          SENSOR_SYMBOLS.find_index(l)
+          SENSOR_SYMBOLS.find_index(sensor)
         else
-          l
+          sensor
         end
       end
 
