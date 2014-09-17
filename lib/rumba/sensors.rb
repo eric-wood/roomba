@@ -274,7 +274,7 @@ class Rumba
     # Get sensors by group
     # Default group 100 = all packets
     def get_sensors(group=100)
-      raw_data = write_chars_with_read([SENSORS,group])
+      raw_data = write_chars_with_read([Constants::SENSORS,group])
       sensor_bytes_to_packets(raw_data, SENSORS_GROUP_PACKETS[group])
     end
 
