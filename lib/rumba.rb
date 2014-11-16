@@ -62,9 +62,9 @@ class Rumba
     data
   end
 
-  # Convert integer to two's complement signed 16 bit integer.
+  # Convert integer to two's complement signed 16 bit integer (big endian)
   def convert_int(int)
-    [int].pack('s').reverse
+    [int].pack('s>')
   end
   
   #############################################################################
