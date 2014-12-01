@@ -283,7 +283,7 @@ class Rumba
     def get_sensors_list(sensors)
       # convert from symbols to IDs
       sensors.map! do |sensor|
-        if sensor.class == Symbol
+        if sensor.is_a?(Symbol)
           SENSOR_SYMBOLS.find_index(sensor)
         else
           sensor
